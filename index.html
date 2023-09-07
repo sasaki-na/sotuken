@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="utf-8">
+  <title>観光ナビサイト</title>
+  <style>
+
+    .card {
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+
+    .drop-area {
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 10px;
+      margin: 10px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- コンテンツ表示画面 -->
+
+  <div id="cardContainer"></div>
+
+  <div>
+    <br>
+    <div> みんなが行きたい場所：<input type="text" id="selectedAttractionName" style="display: none;" onchange="submitForm()">
+    </div>
+    <div>
+      <textarea id="text" cols="30" rows="10" style="display: none;"></textarea>
+      <button id="send" style="display: none;">送信</button>
+    </div>
+    <br>
+    <div id="output" style="overflow: auto;"></div>
+  </div>
+  <br>
+
+  <!-- 特定の箱（ドロップ可能エリア）を定義 -->
+  <div class="drop-area" id="drop-area-1">Box 1</div>
+  <div class="drop-area" id="drop-area-2">Box 2</div>
+  <div class="drop-area" id="drop-area-3">Box 3</div>
+  <div class="drop-area" id="drop-area-4">Box 4</div>
+  <div class="drop-area" id="drop-area-5">Box 5</div>
+
+  <!-- ゴミ箱エリア -->
+<div id="trash-can" class="drop-area">ゴミ箱</div>
+
+  <!--/ コンテンツ表示画面 -->
+
+
+
+  <!-- JQuery -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <!-- JQuery -->
+
+  <script>
+    // 観光地情報のデータ（仮のデータ）
+    const attractions = [
+      {
+        name: '観光地1',
+        description: '観光地1の説明文です。',
+        //image: 'img/sample.png',
+      },
+      {
+        name: '観光地2',
+        description: '観光地2の説明文です。',
+        //image: 'img/sample.png',
+      },
+      {
+        name: '観光地3',
+        description: '観光地3の説明文です。',
+        //image: 'img/sample.png',
+      },
+    ];
+
+    // 観光地カードを作成して表示する関数
+    function displayAttractions() {
+      const cardContainer = document.getElementById('cardContainer');
+      cardContainer.innerHTML = '';
+
+      attractions.forEach(attraction => {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        const image = document.createElement('img');
+        image.src = attraction.image;
+        image.alt = attraction.name;
+
+        const title = document.createElement('h2');
+        title.textContent = attraction.name;
+
+        const description = document.createElement('p');
+        description.textContent = attraction.description;
+
+        const selectButton = document.createElement('button');
+        selectButton.textContent = 'ここに行きたい';
+        selectButton.addEventListener('click', () => {
+          selectAttraction(attraction.name);
+        });
+
+        card.appendChild(image);
+        card.appendChild(title);
+        card.appendChild(description);
+        card.appendChild(selectButton);
+
+        cardContainer.appendChild(card);
+      });
+    }
+
+    // 観光地を選択する関数
+    function selectAttraction(attractionName) {
+      const selectedAttractionNameInput = document.getElementById('selectedAttractionName');
+
+      // 選択された観光地名をテキストボックスに表示
+      selectedAttractionNameInput.value = attractionName;
+      submitForm();
+    }
+
+    // ページ読み込み時に観光地を表示する
+    window.onload = function () {
+      displayAttractions();
+    };
+
+    // フォームを送信する関数
+    function submitForm() {
+      const sendButton = document.getElementById('send');
+      sendButton.click();
+    }
+
+    // WebSocketサーバーのURL
+const serverUrl = 'ws://localhost:3000';
+
+// WebSocket接続の確立
+const socket = new WebSocket(serverUrl);
+
+// ドラッグアンドドロップの操作などをトリガーした際に、PCにデータを送信
+function sendDataToPC(data) {
+  socket.send(data);
+}
+
+// WebSocketサーバーからメッセージを受信したら、適切な処理を実行
+socket.addEventListener('message', (event) => {
+  const receivedData = event.data;
+  // スマートフォン上での操作に基づいて表示を更新
+});
+
+  </script>
+
+  <!--** 以下Firebase **-->
+  <script type="module">
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js";
+    import { getDatabase, ref, push, set, onChildAdded, remove, onChildRemoved }
+      from "https://www.gstatic.com/firebasejs/10.1.0/firebase-database.js";
+    // TODO: Add SDKs for Firebase products that you want to use
+    // https://firebase.google.com/docs/web/setup#available-libraries
+
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCwnTJh7zP7lqxpvGs8-hOl3_HQuIFZorM",
+      authDomain: "sample-50f58.firebaseapp.com",
+      projectId: "sample-50f58",
+      storageBucket: "sample-50f58.appspot.com",
+      messagingSenderId: "522642904584",
+      appId: "1:522642904584:web:78a41eb2880d92f22423bd"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const dbRef = ref(db, "chat")//データが入る場所
+
+    //データの送信
+    $("#send").on("click", function () {
+      const msg = {
+        name: $("#selectedAttractionName").val(),
+        text: $("#text").val()
+      }
+      const newPostReft = push(dbRef);//ユニークキーを生成
+      set(newPostReft, msg);
+    });
+
+    // ドロップエリアを取得
+    const dropAreas = document.querySelectorAll('.drop-area');
+
+
+    //データの受信
+    onChildAdded(dbRef, function (data) {
+      const msg = data.val();
+      const key = data.key; //ユニークキーの取得
+
+      // ドラッグ可能な要素を作成
+      const draggableItem = document.createElement('div');
+      draggableItem.className = 'draggable-item';
+      draggableItem.textContent = msg.name;
+      draggableItem.draggable = true;
+      draggableItem.dataset.key = key;
+
+      // ドラッグアンドドロップイベントの設定
+      draggableItem.addEventListener('dragstart', (event) => {
+        event.dataTransfer.setData('text/plain', key);
+      });
+
+      // ドラッグアンドドロップ対象のエリアに要素を追加
+      output.appendChild(draggableItem);
+    });
+
+    // ドロップエリアにドロップイベントを設定
+    dropAreas.forEach(dropArea => {
+      dropArea.addEventListener('dragover', (event) => {
+        event.preventDefault();
+      });
+
+      dropArea.addEventListener('drop', (event) => {
+        event.preventDefault();
+        const key = event.dataTransfer.getData('text/plain');
+        const text = event.target.textContent;
+        const draggedItem = document.querySelector(`[data-key="${key}"]`);
+
+        if (draggedItem) {
+      if (dropArea.id === 'trash-can') {
+        // ゴミ箱エリアにドロップされたら要素を削除
+        draggedItem.remove();
+      } else {
+        // 他のドロップエリアにドロップされたら移動
+        dropArea.appendChild(draggedItem);
+      }
+    }
+      });
+    });
+
+      // let h = '<p>';
+      // h += msg.name;
+      // h += '<br>'
+      // h += msg.text;
+      // h += '</p>'
+      // $("#output").append(h);
+
+  </script>
+
+</body>
+
+</html>
